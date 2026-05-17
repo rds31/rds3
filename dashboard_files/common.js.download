@@ -1,0 +1,105 @@
+$(document).ready(function() {
+    $('form').on('submit', function(e){
+        // e.preventDefault();
+        $('button[type="submit"]').prop("disabled",true);
+	if(window.location.hostname=='localhost'){
+                if($('form').attr('id') != 'change_password_form'){
+                    $("body").append('<img src="../images/load.gif" style="width: 25px;position: absolute;left: 50%;top: 50%;">');
+                }
+            }
+            else{
+                if($('form').attr('id') != 'change_password_form'){
+                    $("body").append('<img src="../../images/load.gif" style="width: 25px;position: absolute;left: 50%;top: 50%;">');
+                }
+                
+            }
+    });
+});
+function check_available_balance()
+{
+
+    var userType        = $('#userType').val();
+    var leave_type      = $('#leave_type').val();
+    var missing_class   = $("input[name=missing_class]").val();
+    var leave_from      = $("#leave_from").val();
+    var tdaysr          = $("#tdaysr").val();
+
+    if(leave_type === '' || leave_type === 'Extraordinary' || leave_type === 'Waive' || leave_type === 'Study')
+    {
+        return ;
+    }
+
+    if(leave_type === "Medical")
+        $("#file-upload").attr('required', '');
+    else
+    {
+        if (missing_class !== 'Yes')
+            document.getElementById("file-upload").required = false;
+    }
+
+    if(tdaysr < 1)
+    {
+        Swal.fire("Select Leave From & to Date Properly");
+        document.getElementById('leave_type').selectedIndex=0;
+        return false;
+    }
+    else if(tdaysr > 90 && userType === '68' && leave_type !== 'Maternity')
+    {
+        Swal.fire("Maximum Leave Days 90");
+        document.getElementById('leave_type').selectedIndex=0;
+        return false;
+    }
+
+    if (tdaysr > 3 && leave_type === "Casual")
+    {
+        Swal.fire("You can not take more than 3 Casual leaves at a time");
+        document.getElementById('leave_type').selectedIndex=0;
+        return false;
+    }
+
+    document.getElementById('leave_count_message').innerHTML = '';
+    document.getElementById('leave_count_image').style.display='block';
+
+    var dts = { leave_type: leave_type, leave_from: leave_from, tdaysr: tdaysr, csrf_token: $('meta[name="csrf-token"]').attr('content')};
+    $.ajax({
+        type: "POST",
+        url: "leave_balance",
+        data: dts,
+        success: function (data)
+        {
+            document.getElementById('leave_count_image').style.display='none';
+            if (leave_type === 'Earn')
+                document.getElementById('leave_count_message').innerHTML='Available Earned Leave Balance '+ data;
+            else
+                document.getElementById('leave_count_message').innerHTML='Available '+ leave_type + ' Leave Balance '+ data;
+
+            if(data < 1 || parseInt(tdaysr) > parseInt(data))
+            {
+                document.getElementById('leave_count_message').style.color = 'red';
+                document.getElementById("submit_btn").disabled = true;
+            }
+            else
+            {
+                document.getElementById('leave_count_message').style.color = 'blue';
+                document.getElementById("submit_btn").disabled = false;
+            }
+        }
+    });
+
+}
+
+function printForm(reqId) {
+    //var url = "<?= base_url(); ?>index.php/bpm/printForm?req_id=" + reqId; // + "&XDEBUG_SESSION_START=netbeans-xdebug";
+    var url = "printForm?req_id=" + reqId; // + "&XDEBUG_SESSION_START=netbeans-xdebug";
+    window.open(url, "printwindow", "status=0,toolbar=0,location=0,menubar=0,directories=0,resizable=1,scrollbars=1,height=500,width=700");
+}
+
+function leaveHistory(reqId) {
+    var url = "leaveHistory?req_id=" + reqId; // + "&XDEBUG_SESSION_START=netbeans-xdebug";
+    window.open(url, "printwindow", "status=0,toolbar=0,location=0,menubar=0,directories=0,resizable=1,scrollbars=1,height=500,width=700");
+}
+
+function leaveStatus(reqId) {
+    var url = "leaveStatus?req_id=" + reqId; // + "&XDEBUG_SESSION_START=netbeans-xdebug";
+    window.open(url, "printwindow", "status=0,toolbar=0,location=0,menubar=0,directories=0,resizable=1,scrollbars=1,height=500,width=700");
+}
